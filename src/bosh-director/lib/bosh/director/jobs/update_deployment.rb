@@ -10,10 +10,10 @@ module Bosh::Director
         :update_deployment
       end
 
-      def initialize(manifest_text, cloud_config_id, runtime_config_ids, options = {})
+      def initialize(manifest_text, cloud_config_ids, runtime_config_ids, options = {})
         @blobstore = App.instance.blobstores.blobstore
         @manifest_text = manifest_text
-        @cloud_config_id = cloud_config_id
+        @cloud_config_ids = cloud_config_ids
         @runtime_config_ids = runtime_config_ids
         @options = options
         @event_log = Config.event_log
@@ -34,7 +34,7 @@ module Bosh::Director
           @event_log.warn_deprecated(warning)
           cloud_config_model = nil
         else
-          cloud_config_model = Bosh::Director::Models::CloudConfig[@cloud_config_id]
+          cloud_config_model = Bosh::Director::Models::Config[@cloud_config_ids]
           if cloud_config_model.nil?
             logger.debug("No cloud config uploaded yet.")
           else
