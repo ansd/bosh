@@ -14,6 +14,7 @@ module Bosh::Director
             @logger.info('Updating deployment')
             PreCleanupStep.new(@logger, @deployment_plan).perform
             UpdateActiveVmCpisStep.new(@logger, @deployment_plan).perform
+            UpdateCloudPropertiesStep.new(@logger, @deployment_plan).perform
             setup_step.perform
             UpdateJobsStep.new(@base_job, @deployment_plan, @multi_job_updater).perform
             UpdateErrandsStep.new(@base_job, @deployment_plan).perform

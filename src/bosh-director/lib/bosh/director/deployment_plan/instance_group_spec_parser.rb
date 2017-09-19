@@ -344,11 +344,14 @@ module Bosh::Director
             env_hash = resource_pool.env
           end
         else
-          vm_type_name = safe_property(@instance_group_spec, 'vm_type', class: String)
-          vm_type = @deployment.vm_type(vm_type_name)
-          if vm_type.nil?
-            raise InstanceGroupUnknownVmType,
-              "Instance group '#{@instance_group.name}' references an unknown vm type '#{vm_type_name}'"
+          vm_type_name = safe_property(@instance_group_spec, 'vm_type', class: String, optional: true)
+          vm_type = nil
+          if vm_type_name
+            vm_type = @deployment.vm_type(vm_type_name)
+            if vm_type.nil?
+              raise InstanceGroupUnknownVmType,
+                "Instance group '#{@instance_group.name}' references an unknown vm type '#{vm_type_name}'"
+            end
           end
 
           vm_extension_names = Array(safe_property(@instance_group_spec, 'vm_extensions', class: Array, optional: true))
