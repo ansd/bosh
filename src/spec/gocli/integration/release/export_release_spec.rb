@@ -20,21 +20,17 @@ describe 'export-release', type: :integration do
   end
 
   context 'with no source packages and no compiled packages against the targeted stemcell' do
-    before {
-      cloud_config_with_centos = Bosh::Spec::Deployments.simple_cloud_config
-      cloud_config_with_centos['resource_pools'][0]['stemcell']['name'] = 'bosh-aws-xen-hvm-centos-7-go_agent'
-      cloud_config_with_centos['resource_pools'][0]['stemcell']['version'] = '3001'
-      upload_cloud_config(cloud_config_hash: cloud_config_with_centos)
-    }
-
     it 'should raise an error' do
+      upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
       bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
       bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
       bosh_runner.run("upload-release #{spec_asset('compiled_releases/release-test_release-1-on-centos-7-stemcell-3001.tgz')}")
 
-      deploy_simple_manifest({manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5')})
+      manifest = Bosh::Spec::NewDeployments.test_deployment_manifest_with_job('job_using_pkg_5')
+      manifest['stemcells'] = [{'name' => 'bosh-aws-xen-hvm-centos-7-go_agent', 'alias' => 'default', 'version' => '3001'}]
+      deploy_simple_manifest(manifest_hash: manifest)
 
-      out =  bosh_runner.run('export-release test_release/1 toronto-os/1', failure_expected: true, deployment_name: 'test_deployment')
+      out = bosh_runner.run('export-release test_release/1 toronto-os/1', failure_expected: true, deployment_name: 'test_deployment')
       expect(out).to include(<<-EOF)
 Can't use release 'test_release/1'. It references packages without source code and are not compiled against stemcell 'ubuntu-stemcell/1':
  - 'pkg_1/16b4c8ef1574b3f98303307caad40227c208371f'
@@ -308,14 +304,25 @@ Can't use release 'test_release/1'. It references packages without source code a
     context 'with global networking' do
       before do
         bosh_runner.run("upload-stemcell #{spec_asset('valid_stemcell.tgz')}")
-        upload_cloud_config(cloud_config_hash: Bosh::Spec::Deployments.simple_cloud_config)
+        upload_cloud_config(cloud_config_hash: Bosh::Spec::NewDeployments.simple_cloud_config)
         bosh_runner.run("upload-release #{spec_asset('compiled_releases/test_release/releases/test_release/test_release-1.tgz')}")
-        deploy_simple_manifest(manifest_hash: Bosh::Spec::Deployments.test_deployment_manifest_with_job('job_using_pkg_5'))
+
+        deployment_manifest = Bosh::Spec::NewDeployments.minimal_manifest_with_stemcell
+        deployment_manifest['jobs'] = [{
+            'name'          => 'job_using_pkg_5',
+            'templates'     => [],
+            'vm_type' => 'a',
+            'instances'     => 0,
+            'networks'      => [{ 'name' => 'a' }],
+            'stemcell' => 'default'
+          }]
+
+        deploy_simple_manifest(manifest_hash: deployment_manifest)
       end
 
       it 'allocates non-conflicting IPs for compilation VMs' do
         bosh_runner.run("upload-stemcell #{spec_asset('light-bosh-stemcell-3001-aws-xen-hvm-centos-7-go_agent.tgz')}")
-        output = bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'test_deployment')
+        output = bosh_runner.run('export-release test_release/1 centos-7/3001', deployment_name: 'minimal')
         expect(output).to include('Succeeded')
       end
     end

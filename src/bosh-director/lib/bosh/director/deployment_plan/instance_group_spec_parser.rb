@@ -289,6 +289,7 @@ module Bosh::Director
           end
         end
 
+        @logger.warn("&&&&& PERSISTENT DISK COLLECTION: #{persistent_disk_collection.pretty_inspect}")
         @instance_group.persistent_disk_collection = persistent_disk_collection
       end
 
