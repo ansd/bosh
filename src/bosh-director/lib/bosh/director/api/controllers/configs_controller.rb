@@ -154,12 +154,12 @@ module Bosh::Director
       def contents_by_id(config_request)
         from_config = Bosh::Director::Models::Config[config_request['from']['id']]
         unless from_config
-          raise BadConfigRequest, "Config with ID '#{config_request['from']['id']}' not found."
+          raise ConfigNotFound, "Config with ID '#{config_request['from']['id']}' not found."
         end
 
         to_config = Bosh::Director::Models::Config[config_request['to']['id']]
         unless to_config
-          raise BadConfigRequest, "Config with ID '#{config_request['to']['id']}' not found."
+          raise ConfigNotFound, "Config with ID '#{config_request['to']['id']}' not found."
         end
 
         [from_config.raw_manifest, to_config.raw_manifest]
